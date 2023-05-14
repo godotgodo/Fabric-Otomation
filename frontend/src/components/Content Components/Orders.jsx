@@ -48,6 +48,15 @@ export default function BasicTable({ authToken }) {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [addDescription, setAddDescription] = useState('');
 
+  const snackbarControl = (value, info) => {
+    setSnackBarOpen(true);
+    setTimeout(() => {
+      setSnackBarOpen(false);
+    }, 3000);
+    let text = value + ` ${info}`;
+    setSnackBarText(text);
+  }
+
   const getOrders = () => {
     fetch(`${apiUrl}/api/orders`, {
       method: 'GET',
@@ -81,6 +90,7 @@ export default function BasicTable({ authToken }) {
       console.log(data)
     }).catch(err => console.log(err))
   }
+
   const orderCompleted_Put = (order) => {
     fetch(`${apiUrl}/api/orders/${order.order_id}/end`, {
       method: 'PUT',
@@ -88,7 +98,21 @@ export default function BasicTable({ authToken }) {
         'Accept': 'application/json',
         'Authorization': `Bearer ${authToken}`
       }
-    }).then(response => response.json()).then(data => console.log(data)).catch(err => console.log(err))
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      else {
+        throw new Error('Bir sorun oluştu.');
+      }
+    })
+    .then(data => {
+      snackbarControl(" ", "İş emri tamamlandı");
+      getOrders();
+    })
+    .catch(err => {
+      snackbarControl(err.message," ");
+    });
   }
   const deleteOrder = (order) => {
     fetch(`${apiUrl}/api/orders/${order.order_id}`, {
@@ -96,8 +120,23 @@ export default function BasicTable({ authToken }) {
       headers: {
         'Authorization': `Bearer ${authToken}`
       }
-    }).then(response => response.json()).then(data => console.log(data)).catch(err => console.log(err))
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      else {
+        throw new Error('Bir sorun oluştu lütfen girdiğiniz verileri kontrol ettikten sonra tekrar deneyiniz.');
+      }
+    })
+    .then(data => {
+      snackbarControl(" ", "Silindi");
+      getOrders();
+    })
+    .catch(err => {
+      snackbarControl(err.message," ");
+    });
   }
+
   const postOrder = () => {
     const orderInfo = {
       order_description: addDescription,
@@ -113,7 +152,22 @@ export default function BasicTable({ authToken }) {
         'Authorization': `Bearer ${authToken}`
       },
       body: JSON.stringify(orderInfo)
-    }).then(response => response.json()).then(data => console.log(data)).catch(err => console.log(err));
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      else {
+        throw new Error('Bir sorun oluştu lütfen girdiğiniz verileri kontrol ettikten sonra tekrar deneyiniz.');
+      }
+    })
+    .then(data => {
+      getOrders();
+      snackbarControl(data.order_description, " eklendi");
+    })
+    .catch(err => {
+      console.log(err)
+      snackbarControl(err.message," ");
+    });
   }
 
 

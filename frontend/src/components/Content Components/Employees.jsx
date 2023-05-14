@@ -17,7 +17,7 @@ import Modal from '@mui/material/Modal';
 import Fade from '@mui/material/Fade';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { useEffect } from 'react';
-const apiUrl=process.env.REACT_APP_API_URL;
+const apiUrl = process.env.REACT_APP_API_URL;
 
 // modal snackbar vs hepsi içinde yazıldı
 
@@ -32,6 +32,17 @@ const modalStyle = {
   boxShadow: 24,
   p: 4,
 };
+const giveAdminModal = {
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: 300,
+  height: 300,
+  bgcolor: 'background.paper',
+  boxShadow: 24,
+  p: 4,
+};
 
 export default function BasicTable({ authToken }) {
   const [snackBarOpen, setSnackBarOpen] = useState(false);
@@ -40,12 +51,22 @@ export default function BasicTable({ authToken }) {
   const [editModalData, setEditModalData] = useState({});
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [employeesData, setEmployeesData] = useState([]);
-  const [newEmployeeName,setNewEmployeeName]=useState('');
-  const [newEmployeeEmail,setNewEmployeeEmail]=useState('');
-  const [newEmployeeTcno,setNewEmployeeTcno]=useState('');
-  const [newEmployeePhoneno,setNewEmployeePhoneno]=useState('');
-  const [newEmployeeSalary,setNewEmployeeSalary]=useState('');
-  const [newEmployeeDateOfStart,setNewEmployeeDateOfStart]=useState('');
+  const [newEmployeeName, setNewEmployeeName] = useState('');
+  const [newEmployeeEmail, setNewEmployeeEmail] = useState('');
+  const [newEmployeeTcno, setNewEmployeeTcno] = useState('');
+  const [newEmployeePhoneno, setNewEmployeePhoneno] = useState('');
+  const [newEmployeeSalary, setNewEmployeeSalary] = useState('');
+  const [newEmployeeDateOfStart, setNewEmployeeDateOfStart] = useState('');
+  const [password, setPassword] = useState('');
+  const [employeeGiveAdminModal,setEmployeeGiveAdminModal]=useState({});
+  const [giveAdminModalOpen,setGiveAdminModalOpen]=useState(false);
+  const [editedEmployeeData, setEditedEmployeeData] = useState({
+    name: '',
+    email: '',
+    tc_no: '',
+    phone_number: '',
+    salary: 0,
+  })
 
   const getEmployees = () => {
     fetch(`${apiUrl}/api/employees`, {
@@ -59,44 +80,131 @@ export default function BasicTable({ authToken }) {
     }).catch(err => console.log(err))
   }
 
-  const postNewEmployee=()=>{
-    const newEmployeeInfo={
-      name:newEmployeeName,
-      email:newEmployeeEmail,
-      tc_no:newEmployeeTcno,
-      phone_number:newEmployeePhoneno,
-      salary:newEmployeeSalary,
-      date_of_start:newEmployeeDateOfStart
+  const postNewEmployee = () => {
+    const newEmployeeInfo = {
+      name: newEmployeeName,
+      email: newEmployeeEmail,
+      tc_no: newEmployeeTcno,
+      phone_number: newEmployeePhoneno,
+      salary: newEmployeeSalary,
+      date_of_start: newEmployeeDateOfStart
     }
-    fetch(`${apiUrl}/api/employees/store`,{
-      method:'POST',
-      headers:{
-        'Accept':'application/json',
-        'Content-type':'application/json',
-        'Authorization':`Bearer ${authToken}`
+    fetch(`${apiUrl}/api/employees/store`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
       },
-      body:JSON.stringify(newEmployeeInfo)
-    }).then(response=>response.json()).then(data=>{
-      console.log(data);
-      snackbarControl(data.name,' eklendi.')
-    }).catch(err=>console.log(err))
+      body: JSON.stringify(newEmployeeInfo)
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      else {
+        throw new Error('Bir sorun oluştu lütfen girdiğiniz verileri kontrol ettikten sonra tekrar deneyiniz.');
+      }
+    })
+      .then(data => {
+        getEmployees();
+        snackbarControl(data.name, " eklendi");
+      })
+      .catch(err => {
+        snackbarControl(err.message, " ");
+      });
   }
 
-  const deleteEmployee=(employee)=>{
-    fetch(`${apiUrl}/api/employees/${employee.employee_id}`,{
-      method:'DELETE',
-      headers:{
-        'Accept':'application/json',
-        'Authorization':`Bearer ${authToken}`
+  const deleteEmployee = (employee) => {
+    fetch(`${apiUrl}/api/employees/${employee.employee_id}`, {
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authToken}`
       }
-    }).then(response=>response.json()).then(data=>{
-      snackbarControl(employee.employee_name,' silindi.')
-    }).catch(err=>console.log(err))
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      else {
+        throw new Error('Bir sorun oluştu lütfen girdiğiniz verileri kontrol ettikten sonra tekrar deneyiniz.');
+      }
+    })
+      .then(data => {
+        getEmployees();
+        snackbarControl(" ", "Silindi");
+      })
+      .catch(err => {
+        snackbarControl(err.message, " ");
+      });
+  }
+
+  const postRegister = (employee) => {
+    console.log(password);
+    console.log(employee.employee_id)
+    fetch(`${apiUrl}/api/admins/register`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-type': 'application/json',
+        'Authorizaton': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({ employee_id: employee.employee_id, password: password })
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      else {
+        throw new Error('Bir sorun oluştu lütfen girdiğiniz verileri kontrol ettikten sonra tekrar deneyiniz.');
+      }
+    })
+      .then(data => {
+        getEmployees();
+        snackbarControl(data.employee.name, " e admin rolü verildi");
+      })
+      .catch(err => {
+        snackbarControl(err.message, " ");
+      });
+  }
+
+  const putEmployee = () => {
+    console.log(editedEmployeeData);
+    console.log(editModalData.employee_id)
+    fetch(`${apiUrl}/api/employees/${editModalData.employee_id}/update`, {
+      method: 'PUT',
+      headers: {
+        'Accept': 'application/json',
+        'Content-type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify(editedEmployeeData)
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      else {
+        throw new Error('Bir sorun oluştu lütfen girdiğiniz verileri kontrol ettikten sonra tekrar deneyiniz.');
+      }
+    })
+      .then(data => {
+        getEmployees();
+        snackbarControl(data.name, " güncellendi");
+      })
+      .catch(err => {
+        snackbarControl(err.message, " ");
+      });
   }
 
   const handleEditModalOpen = (row) => {
     setEditModalOpen(true);
     setEditModalData(row);
+    console.log(row);
+    setEditedEmployeeData({
+      name: row.name,
+      email: row.email,
+      tc_no: row.tc_no,
+      phone_number: row.phone_number,
+      salary: row.salary
+    })
   };
 
   const handleEditModalClose = () => setEditModalOpen(false);
@@ -106,17 +214,16 @@ export default function BasicTable({ authToken }) {
     deleteEmployee(employee);
   }
 
-  const handleEdit = (editModalData) => {
-    console.log(editModalData);
-    setSnackBarOpen(true);
-    setTimeout(() => {
-      setSnackBarOpen(false);
-    }, 3000);
-    let text = editModalData.name + ' güncellendi';
-    setSnackBarText(text);
+  const handleGiveAdmin = (employee) => {
+    setEmployeeGiveAdminModal(employee);
+    setGiveAdminModalOpen(true);
   }
 
-  const handleAdd=()=>{
+  const handleEdit = () => {
+    putEmployee();
+  }
+
+  const handleAdd = () => {
     postNewEmployee();
   }
 
@@ -164,7 +271,7 @@ export default function BasicTable({ authToken }) {
               <TableCell align="right">{employee.tc_no}</TableCell>
               <TableCell align="right">{employee.email}</TableCell>
               <TableCell align="right">{employee.phone_number}</TableCell>
-              <TableCell align="right">{employee.date_of_start}</TableCell>
+              <TableCell align="right">{employee.date_of_start.split(" ")[0]}</TableCell>
               <TableCell align="right">{employee.salary}</TableCell>
               <TableCell align='left'>
                 <Chip
@@ -178,6 +285,10 @@ export default function BasicTable({ authToken }) {
                   Edit
                   <EditIcon fontSize='small' className='' />
                 </Chip>
+                <Chip variant='soft' color='info' onClick={() => handleGiveAdmin(employee)} className="relative" >
+                  Give Admin
+                </Chip>
+                
               </TableCell>
             </TableRow>
           ))}
@@ -206,8 +317,31 @@ export default function BasicTable({ authToken }) {
       >
         <Fade in={editModalOpen}>
           <Box sx={modalStyle}>
+            <h3 className='text-2xl font-light ml-4 mt-6'>Edit Employee</h3>
+            <div className='mt-4 ml-10'>
+              <div>
+                <span>Name</span>
+                <input type="text" defaultValue={editedEmployeeData.name} onChange={(e) => setEditedEmployeeData({ ...editedEmployeeData, name: e.target.value })} className='bg-slate-100 w-40 p-4 shadow-md rounded-md ml-2 mb-4' />
+              </div>
+              <div>
+                <span>Email</span>
+                <input type="text" defaultValue={editedEmployeeData.email} onChange={(e) => setEditedEmployeeData({ ...editedEmployeeData, email: e.target.value })} className='bg-slate-100 w-40 p-4 shadow-md rounded-md ml-2 mb-4' />
+              </div>
+              <div>
+                <span>T.C no</span>
+                <input type="text" defaultValue={editedEmployeeData.tc_no} onChange={(e) => setEditedEmployeeData({ ...editedEmployeeData, tc_no: e.target.value })} className='bg-slate-100 w-40 p-4 shadow-md rounded-md ml-2 mb-4' />
+              </div>
+              <div>
+                <span>Phone no</span>
+                <input type="text" defaultValue={editedEmployeeData.phone_number} onChange={(e) => setEditedEmployeeData({ ...editedEmployeeData, phone_number: e.target.value })} className='bg-slate-100 w-[8.5rem] p-4 shadow-md rounded-md ml-2 mb-4' />
+              </div>
+              <div>
+                <span>Salary</span>
+                <input type="text" defaultValue={editedEmployeeData.salary} onChange={(e) => setEditedEmployeeData({ ...editedEmployeeData, salary: e.target.value })} className='bg-slate-100 w-40 p-4 shadow-md rounded-md ml-2 mb-4' />
+              </div>
+            </div>
             {editModalData.name} ile ilgili bilgiler.
-            <button className='absolute bottom-8 right-16 bg-blue-300 px-4 py-2 rounded-full' onClick={() => { handleEdit(editModalData) }}>
+            <button className='absolute bottom-8 right-16 bg-blue-300 px-4 py-2 rounded-full' onClick={() => { handleEdit() }}>
               Kaydet
             </button>
           </Box>
@@ -234,27 +368,27 @@ export default function BasicTable({ authToken }) {
             <div className='mt-4 ml-10'>
               <div>
                 <span>Name</span>
-                <input type="text" onChange={(e)=>setNewEmployeeName(e.target.value)} className='bg-slate-100 w-40 p-4 shadow-md rounded-md ml-2 mb-4' />
+                <input type="text" onChange={(e) => setNewEmployeeName(e.target.value)} className='bg-slate-100 w-40 p-4 shadow-md rounded-md ml-2 mb-4' />
               </div>
               <div>
                 <span>Email</span>
-                <input type="text" onChange={(e)=>setNewEmployeeEmail(e.target.value)} className='bg-slate-100 w-40 p-4 shadow-md rounded-md ml-2 mb-4' />
+                <input type="text" onChange={(e) => setNewEmployeeEmail(e.target.value)} className='bg-slate-100 w-40 p-4 shadow-md rounded-md ml-2 mb-4' />
               </div>
               <div>
                 <span>T.C no</span>
-                <input type="text" onChange={(e)=>setNewEmployeeTcno(e.target.value)} className='bg-slate-100 w-40 p-4 shadow-md rounded-md ml-2 mb-4' />
+                <input type="text" onChange={(e) => setNewEmployeeTcno(e.target.value)} className='bg-slate-100 w-40 p-4 shadow-md rounded-md ml-2 mb-4' />
               </div>
               <div>
                 <span>Phone no</span>
-                <input type="text" onChange={(e)=>setNewEmployeePhoneno(e.target.value)} className='bg-slate-100 w-[8.5rem] p-4 shadow-md rounded-md ml-2 mb-4' />
+                <input type="text" onChange={(e) => setNewEmployeePhoneno(e.target.value)} className='bg-slate-100 w-[8.5rem] p-4 shadow-md rounded-md ml-2 mb-4' />
               </div>
               <div>
                 <span>Salary</span>
-                <input type="text" onChange={(e)=>setNewEmployeeSalary(e.target.value)} className='bg-slate-100 w-40 p-4 shadow-md rounded-md ml-2 mb-4' />
+                <input type="text" onChange={(e) => setNewEmployeeSalary(e.target.value)} className='bg-slate-100 w-40 p-4 shadow-md rounded-md ml-2 mb-4' />
               </div>
               <div>
                 <span>Date of start</span>
-                <input type="text" onChange={(e)=>setNewEmployeeDateOfStart(e.target.value)} className='bg-slate-100 w-40 p-4 shadow-md rounded-md ml-2 mb-4' />
+                <input type="text" onChange={(e) => setNewEmployeeDateOfStart(e.target.value)} className='bg-slate-100 w-40 p-4 shadow-md rounded-md ml-2 mb-4' />
               </div>
             </div>
             <button className='absolute bottom-8 right-16 bg-green-500 px-4 py-2 rounded-full' onClick={() => { handleAdd() }}>
@@ -263,6 +397,23 @@ export default function BasicTable({ authToken }) {
           </Box>
         </Fade>
       </Modal>
+
+      <Modal
+                  open={giveAdminModalOpen}
+                  onClose={()=>setGiveAdminModalOpen(false)}
+                  aria-labelledby="modal-modal-title"
+                  aria-describedby="modal-modal-description"
+                >
+                  <Box sx={giveAdminModal}>
+                  <div>
+                      <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password</label>
+                      <input type="password" onChange={(e)=>setPassword(e.target.value)} name="password_register" id={`password_register_${employeeGiveAdminModal.employee_id}`} placeholder="••••••••" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required=""/>
+                  </div>
+                  <button className='w-full mt-4 text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center' onClick={()=>postRegister(employeeGiveAdminModal)}>
+                    Give Admin Permission
+                  </button>
+                  </Box>
+                </Modal>
 
     </TableContainer>
   );

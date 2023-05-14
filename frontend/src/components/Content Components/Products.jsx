@@ -19,7 +19,7 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { useEffect } from 'react';
 
 
-const apiUrl=process.env.REACT_APP_API_URL;
+const apiUrl = process.env.REACT_APP_API_URL;
 
 // modal snackbar vs hepsi içinde yazıldı
 // editte input:texttekiler hiç değişmezse stateteki değer boş olduğu için hata veriyor
@@ -49,7 +49,7 @@ export default function BasicTable({ authToken }) {
   const [editProductName, setEditProductName] = useState('');
   const [editProductDescription, setEditProductDescription] = useState('');
 
-  const snackbarControl = (value,info) => {
+  const snackbarControl = (value, info) => {
     setSnackBarOpen(true);
     setTimeout(() => {
       setSnackBarOpen(false);
@@ -58,7 +58,7 @@ export default function BasicTable({ authToken }) {
     setSnackBarText(text);
   }
 
-  const getProducts=()=>{
+  const getProducts = () => {
     fetch(`${apiUrl}/api/products`, {
       method: 'GET',
       headers: {
@@ -69,9 +69,12 @@ export default function BasicTable({ authToken }) {
       setProductsData(data);
     }).catch(err => console.log(err))
   }
-  const handleEditModalOpen = (row) => {
+  const handleEditModalOpen = (product) => {
+    console.log(product)
     setEditModalOpen(true);
-    setEditModalData(row);
+    setEditModalData(product);
+    setEditProductName(product.name);
+    setEditProductDescription(product.description);
   };
 
   const postNewProduct = () => {
@@ -87,16 +90,30 @@ export default function BasicTable({ authToken }) {
         'Authorization': `Bearer ${authToken}`
       },
       body: JSON.stringify(newPostInfo)
-    }).then(response => response.json()).then(data => {
-      snackbarControl(data.product_id,' idli product eklendi');
-    }).catch(err => console.log(err))
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      else {
+        throw new Error('Bir sorun oluştu lütfen girdiğiniz verileri kontrol ettikten sonra tekrar deneyiniz.');
+      }
+    })
+      .then(data => {
+        getProducts();
+        snackbarControl(data.name, " eklendi");
+      })
+      .catch(err => {
+        snackbarControl(err.message, " ");
+      });
   }
+
   const putEditProduct = (product_id) => {
+    console.log(product_id)
     const updatedProduct = {
       name: editProductName,
       description: editProductDescription
     }
-
+    console.log(updatedProduct)
     fetch(`${apiUrl}/api/products/${product_id}/update`, {
       method: 'PUT',
       headers: {
@@ -105,16 +122,46 @@ export default function BasicTable({ authToken }) {
         'Authorization': `Bearer ${authToken}`
       },
       body: JSON.stringify(updatedProduct)
-    }).then(response => response.json()).then(data => console.log(data)).catch(err => console.log(err))
-  }
-  const deleteProduct=(product_id)=>{
-    fetch(`${apiUrl}/api/products/${product_id}`,{
-      method:'DELETE',
-      headers:{
-        'Accept':'application/json',
-        'Authorization':`Bearer ${authToken}`
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
       }
-    }).then(response=>console.log(response)).then(data=>console.log(data)).catch(err=>console.log(err))
+      else {
+        throw new Error('Bir sorun oluştu lütfen girdiğiniz verileri kontrol ettikten sonra tekrar deneyiniz.');
+      }
+    })
+      .then(data => {
+        console.log(data)
+        getProducts();
+        snackbarControl(data.name, " düzenlendi.");
+      })
+      .catch(err => {
+        snackbarControl(err.message, " ");
+      });
+  }
+
+  const deleteProduct = (product_id) => {
+    fetch(`${apiUrl}/api/products/${product_id}`, {
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      }
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      else {
+        throw new Error('Bir sorun oluştu lütfen girdiğiniz verileri kontrol ettikten sonra tekrar deneyiniz.');
+      }
+    })
+      .then(data => {
+        getProducts();
+        snackbarControl(" ", "Silindi");
+      })
+      .catch(err => {
+        snackbarControl(err.message, " ");
+      });
   }
 
 
@@ -126,12 +173,11 @@ export default function BasicTable({ authToken }) {
 
   const handleDelete = (product) => {
     deleteProduct(product.product_id);
-    snackbarControl(product.product_id,' idli product silindi.')
   }
 
   const handleEdit = (oldProduct) => {
-    putEditProduct(oldProduct.product_id);
-    snackbarControl(oldProduct.product_id,' id li product güncellendi.')
+    console.log(oldProduct)
+    putEditProduct(oldProduct);
   }
 
   useEffect(() => {
@@ -177,38 +223,6 @@ export default function BasicTable({ authToken }) {
                   <EditIcon fontSize='small' className='' />
                 </Chip>
               </TableCell>
-              {/* modal for editing. */}
-              <Modal
-                aria-labelledby="transition-modal-title"
-                aria-describedby="transition-modal-description"
-                open={editModalOpen}
-                onClose={handleEditModalClose}
-                closeAfterTransition
-                slots={{ backdrop: Backdrop }}
-                slotProps={{
-                  backdrop: {
-                    timeout: 500,
-                  },
-                }}
-              >
-                <Fade in={editModalOpen}>
-                  <Box sx={modalStyle}>
-                    <h3 className='text-2xl font-light'>Edit Product</h3>
-                    <div className='ml-8'>
-                      <div className='mt-4'>
-                        <span className='mr-4'>Name</span>
-                        <input className='w-40 p-2 bg-slate-100 rounded-md shadow-md' onChange={(e) => setEditProductName(e.target.value)} type="text" name="edit_product_name" id="edit_product_name" placeholder='name...' defaultValue={product.name} />
-                      </div>
-                      <div className='mt-8'>
-                        <textarea className='p-4 bg-slate-100 rounde-md shadow-md' onChange={(e) => setEditProductDescription(e.target.value)} name="edit_product_description" id="edit_product_description" cols="30" rows="5" placeholder='description...' defaultValue={product.description}></textarea>
-                      </div>
-                    </div>
-                    <button className='absolute bottom-8 right-16 bg-blue-300 px-4 py-2 rounded-full' onClick={() => { handleEdit(product) }}>
-                      Kaydet
-                    </button>
-                  </Box>
-                </Fade>
-              </Modal>
             </TableRow>
           ))}
         </TableBody>
@@ -220,7 +234,38 @@ export default function BasicTable({ authToken }) {
         message={snackBarText}
       />
 
-
+      {/* modal for editing. */}
+      <Modal
+        aria-labelledby="transition-modal-title"
+        aria-describedby="transition-modal-description"
+        open={editModalOpen}
+        onClose={handleEditModalClose}
+        closeAfterTransition
+        slots={{ backdrop: Backdrop }}
+        slotProps={{
+          backdrop: {
+            timeout: 500,
+          },
+        }}
+      >
+        <Fade in={editModalOpen}>
+          <Box sx={modalStyle}>
+            <h3 className='text-2xl font-light'>Edit Product</h3>
+            <div className='ml-8'>
+              <div className='mt-4'>
+                <span className='mr-4'>Name</span>
+                <input className='w-40 p-2 bg-slate-100 rounded-md shadow-md' onChange={(e) => setEditProductName(e.target.value)} type="text" name="edit_product_name" id="edit_product_name" placeholder='name...' defaultValue={editModalData.name} />
+              </div>
+              <div className='mt-8'>
+                <textarea className='p-4 bg-slate-100 rounde-md shadow-md' onChange={(e) => setEditProductDescription(e.target.value)} name="edit_product_description" id="edit_product_description" cols="30" rows="5" placeholder='description...' defaultValue={editModalData.description}></textarea>
+              </div>
+            </div>
+            <button className='absolute bottom-8 right-16 bg-blue-300 px-4 py-2 rounded-full' onClick={() => { handleEdit(editModalData.product_id) }}>
+              Kaydet
+            </button>
+          </Box>
+        </Fade>
+      </Modal>
 
       {/* modal for orders adding. */}
       <Modal

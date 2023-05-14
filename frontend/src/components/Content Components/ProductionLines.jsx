@@ -65,9 +65,21 @@ export default function BasicTable({ authToken }) {
         'Authorization': `Bearer ${authToken}`
       },
       body: JSON.stringify(productionLineInfo)
-    }).then(response => response.json()).then(data => {
-      snackbarControl(data.line_id, ' idli üretim hattı şimdi güncellendi.')
-    }).catch(err => console.log(err))
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      else {
+        throw new Error('Bir sorun oluştu lütfen girdiğiniz verileri kontrol ettikten sonra tekrar deneyiniz.');
+      }
+    })
+    .then(data => {
+      getProductionLines();
+      snackbarControl(data.line_name, " güncellendi.");
+    })
+    .catch(err => {
+      snackbarControl(err.message," ");
+    });
   }
 
   const putLineEnd = (productionLine) => {
@@ -77,7 +89,21 @@ export default function BasicTable({ authToken }) {
         'Accept': 'application/json',
         'Authorization': `Bearer ${authToken}`
       }
-    }).then(response => console.log(response)).then(data =>console.log(data)).catch(err => console.log(err))
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      else {
+        throw new Error('Bir sorun oluştu lütfen girdiğiniz verileri kontrol ettikten sonra tekrar deneyiniz.');
+      }
+    })
+    .then(data => {
+      getProductionLines()
+      snackbarControl(data.line_name, " sonlandırıldı.");
+    })
+    .catch(err => {
+      snackbarControl(err.message," ");
+    });
   }
 
   const postNewLine = () => {
@@ -93,9 +119,21 @@ export default function BasicTable({ authToken }) {
         'Authorization': `Bearer ${authToken}`
       },
       body: JSON.stringify(newLineInfo)
-    }).then(response => response.json()).then(data => {
-      snackbarControl(newLineName, ' eklendi. ')
-    }).catch(err => console.log(err))
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      else {
+        throw new Error('Bir sorun oluştu lütfen girdiğiniz verileri kontrol ettikten sonra tekrar deneyiniz.');
+      }
+    })
+    .then(data => {
+      getProductionLines();
+      snackbarControl(data.line_name, " eklendi");
+    })
+    .catch(err => {
+      snackbarControl(err.message," ");
+    });
   }
 
   const getProducts = () => {
@@ -118,9 +156,21 @@ export default function BasicTable({ authToken }) {
         Accept: 'application/json',
         Authorization: `Bearer ${authToken}`
       }
-    }).then(response => response.json()).then(data => {
-      snackbarControl(productionLine.line_name, ' silindi.')
-    }).catch(err => console.log(err))
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      else {
+        throw new Error('Bir sorun oluştu lütfen girdiğiniz verileri kontrol ettikten sonra tekrar deneyiniz.');
+      }
+    })
+    .then(data => {
+      getProductionLines();
+      snackbarControl(" ","Silindi");
+    })
+    .catch(err => {
+      snackbarControl(err.message," ");
+    });
   }
 
   const getProductionLines = () => {
@@ -135,7 +185,7 @@ export default function BasicTable({ authToken }) {
       setProductionLinesData(data);
     }).catch(err => console.log(err))
   }
-
+  
   const snackbarControl = (value, info) => {
     setSnackBarOpen(true);
     setTimeout(() => {
@@ -147,6 +197,9 @@ export default function BasicTable({ authToken }) {
 
   const handleEditModalOpen = (productionLine) => {
     setEditModalOpen(true);
+    console.log(productionLine);
+    setEditProductLineName(productionLine.line_name);
+    setEditProductLineProduct(productionLine.product.product_id);
     setEditModalData(productionLine);
     getProducts();
   };
@@ -200,11 +253,9 @@ export default function BasicTable({ authToken }) {
               <TableCell align="right">{productionLine.starting_date}</TableCell>
               <TableCell align="right">{productionLine.end_date}</TableCell>
               <TableCell align="right">
-                <select name="" id="">
-                  {productionLine.machines.map(machine => <option key={machine.machine_id}>{machine.machine_name} </option>)}
-                </select>
+                  {productionLine.machines.length>0 ? <select>{productionLine.machines.map(machine => <option key={machine.machine_id}>{machine.machine_name}</option>)}</select> :'-'}
               </TableCell>
-              <TableCell align="right">{productionLine.product.name}</TableCell>
+              <TableCell align="right">{productionLine.product?.name ? productionLine.product.name: '-'}</TableCell>
               <TableCell align='left'>
                 <Chip
                   variant="soft"
@@ -252,11 +303,11 @@ export default function BasicTable({ authToken }) {
             <div>
               <div>
                 <span>Line Name</span>
-                <input type="text" placeholder={editModalData.line_name} className='ml-4 w-32 p-4 bg-slate-100 rounded-md shadow-md' onChange={(e) => setEditProductLineName(e.target.value)} />
+                <input type="text" defaultValue={editModalData.line_name} className='ml-4 w-32 p-4 bg-slate-100 rounded-md shadow-md' onChange={(e) => setEditProductLineName(e.target.value)} />
               </div>
               <div className='mt-6'>
                 <span>Product</span>
-                <select placeholder='aaa' defaultValue='2' onChange={(e) => setEditProductLineProduct(e.target.value)} className='w-32 p-4 bg-slate-100 ml-4 rounded-md shadow-md' name='edit_production_line' id='edit_production_line' >
+                <select defaultValue={editModalData.product?.product_id} onChange={(e) => setEditProductLineProduct(e.target.value)} className='w-32 p-4 bg-slate-100 ml-4 rounded-md shadow-md' name='edit_production_line' id='edit_production_line' >
                   {productsData?.map((product) => <option value={product.product_id} key={product.product_id}>{product.name}</option>)}
                 </select>
               </div>

@@ -61,7 +61,21 @@ export default function BasicTable({ authToken }) {
        'Authorization':`Bearer ${authToken}` 
       },
       body:JSON.stringify(updatedMachineInfo)
-    }).then(response=>response.json()).then(data=>console.log(data)).catch(err=>console.log(err))
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      else {
+        throw new Error('Bir sorun oluştu lütfen girdiğiniz verileri kontrol ettikten sonra tekrar deneyiniz.');
+      }
+    })
+    .then(data => {
+      getMachines();
+      snackbarControl(data.machine_name, " güncellendi.");
+    })
+    .catch(err => {
+      snackbarControl(err.message," ");
+    });
   }
 
   const getMachines = () => {
@@ -95,7 +109,9 @@ export default function BasicTable({ authToken }) {
       line_id: newMachineLine
     }
 
-    fetch(`${apiUrl}/api/machines/store'`, {
+    console.log(newMachineInfo);
+
+    fetch(`${apiUrl}/api/machines/store`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -103,9 +119,21 @@ export default function BasicTable({ authToken }) {
         'Authorization': `Bearer ${authToken}`
       },
       body: JSON.stringify(newMachineInfo)
-    }).then(response => response.json()).then(data => {
-      snackbarControl(data.machine_name, ' eklendi.')
-    }).catch(err => console.log(err))
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      else {
+        throw new Error('Bir sorun oluştu lütfen girdiğiniz verileri kontrol ettikten sonra tekrar deneyiniz.');
+      }
+    })
+    .then(data => {
+      getMachines();
+      snackbarControl(data.machine_name, " eklendi");
+    })
+    .catch(err => {
+      snackbarControl(err.message," ");
+    });
   }
 
   const deleteMachine = (machine) => {
@@ -115,9 +143,21 @@ export default function BasicTable({ authToken }) {
         'Accept': 'application/json',
         'Authorization': `Bearer ${authToken}`
       }
-    }).then(response => response.json()).then(data => {
-      snackbarControl(machine.machine_name, ' silindi.')
-    }).catch(err => console.log(err))
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      else {
+        throw new Error('Bir sorun oluştu lütfen girdiğiniz verileri kontrol ettikten sonra tekrar deneyiniz.');
+      }
+    })
+    .then(data => {
+      getMachines();
+      snackbarControl(" ", " Silindi");
+    })
+    .catch(err => {
+      snackbarControl(err.message," ");
+    });
   }
 
   const putMaintenanceDone = (machine) => {
@@ -127,14 +167,27 @@ export default function BasicTable({ authToken }) {
         'Accept': 'application/json',
         'Authorization': `Bearer ${authToken}`
       }
-    }).then(response => response.json()).then(data => {
-      console.log(data)
-      snackbarControl(machine.machine_name, "'in bakımı şimdi yapıldı.");
-    }).then(err => console.log(err))
+    }).then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      else {
+        throw new Error('Bir sorun oluştu lütfen girdiğiniz verileri kontrol ettikten sonra tekrar deneyiniz.');
+      }
+    })
+    .then(data => {
+      getMachines();
+      snackbarControl(" ", "Bakımı yapıldı.");
+    })
+    .catch(err => {
+      snackbarControl(err.message," ");
+    });
   }
 
   const handleEditModalOpen = (machine) => {
     setEditModalOpen(true);
+    setEditMachineName(machine.machine_name);
+    setEditMachineLine(machine.line_id);
     setEditModalData(machine);
     getProductionLines();
   };
@@ -197,7 +250,7 @@ export default function BasicTable({ authToken }) {
                 {machine.machine_name}
               </TableCell>
               <TableCell align="right">{machine.maintenance_date}</TableCell>
-              <TableCell align="right">{machine.production_line.line_name}</TableCell>
+              <TableCell align="right">{machine.production_line?.line_name ? machine.production_line.line_name:'- '}</TableCell>
               <TableCell align='left'>
                 <Chip
                   variant="soft"
@@ -243,7 +296,7 @@ export default function BasicTable({ authToken }) {
             <div className='mt-2 ml-6'>
               <div>
                 <span >Machine Name</span>
-                <input className='w-40 p-4 shadow-md rounded-md bg-slate-100 ml-2' type="text" placeholder={editModalData.machine_name} onChange={(e)=>setEditMachineName(e.target.value)} />
+                <input className='w-40 p-4 shadow-md rounded-md bg-slate-100 ml-2' type="text" defaultValue={editModalData.machine_name} onChange={(e)=>setEditMachineName(e.target.value)} />
               </div>
               <div>
                 <span>Production Line</span>

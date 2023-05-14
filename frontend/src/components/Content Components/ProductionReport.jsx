@@ -11,35 +11,30 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-const apiUrl=process.env.REACT_APP_API_URL;
+import { useState } from 'react';
+import { useEffect } from 'react';
+import Charts from './Charts';
 
-function createData(name, calories, fat, carbs, protein, price) {
-  return {
-    name,
-    calories,
-    fat,
-    carbs,
-    protein,
-    price,
-    history: [
-      {
-        date: '2020-01-05',
-        customerId: '11091700',
-        amount: 3,
-      },
-      {
-        date: '2020-01-02',
-        customerId: 'Anonymous',
-        amount: 1,
-      },
-    ],
-  };
-}
+const apiUrl = process.env.REACT_APP_API_URL;
 
-function Row(props) {
-  const { row } = props;
-  console.log(row);
+function Row({ prodLine ,authToken}) {
   const [open, setOpen] = React.useState(false);
+  const [montlyLineData,setMonthlyLineData]=useState([]);
+
+  const getMonthlyLineDatas=()=>{
+    fetch(`${apiUrl}/api/dailyproductions/report`,{
+      method:'POST',
+      headers:{
+        'Accept':'application/json',
+        'Content-type':'application/json',
+        'Authorization':`Bearer ${authToken}`
+      },
+      body:JSON.stringify({line_id:prodLine.line_id,option:3})
+    }).then(response=>response.json()).then(data=>{
+      setMonthlyLineData(data);
+    }).catch(err=>console.log(err))
+  }
+  
 
   return (
     <React.Fragment>
@@ -48,23 +43,34 @@ function Row(props) {
           <IconButton
             aria-label="expand row"
             size="small"
-            onClick={() => setOpen(!open)}
+            onClick={() => {
+              setOpen(!open);
+              getMonthlyLineDatas();
+            }}
           >
-            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+            <span>
+              Get Chart
+              {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+            </span>
           </IconButton>
         </TableCell>
-        <TableCell component="th" scope="row">
-          {row.name}
+        <TableCell>
+          {prodLine.line_name}
         </TableCell>
-        <TableCell align="right">{row.calories}</TableCell>
-        <TableCell align="right">{row.fat}</TableCell>
-        <TableCell align="right">{row.carbs}</TableCell>
-        <TableCell align="right">{row.protein}</TableCell>
+        <TableCell>
+          {prodLine.starting_date}
+        </TableCell>
+        <TableCell>
+          {prodLine.product?.name ? prodLine.product.name:' '}
+        </TableCell>
       </TableRow>
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={1}>
           <Collapse in={open} timeout="auto" unmountOnExit>
-            {row.name} ile ilgili bilgiler
+            <span className='font-black capitalize'>
+            {prodLine.line_name}
+            </span>
+            <Charts data={montlyLineData}/>
           </Collapse>
         </TableCell>
       </TableRow>
@@ -72,49 +78,40 @@ function Row(props) {
   );
 }
 
-Row.propTypes = {
-  row: PropTypes.shape({
-    calories: PropTypes.number.isRequired,
-    carbs: PropTypes.number.isRequired,
-    fat: PropTypes.number.isRequired,
-    history: PropTypes.arrayOf(
-      PropTypes.shape({
-        amount: PropTypes.number.isRequired,
-        customerId: PropTypes.string.isRequired,
-        date: PropTypes.string.isRequired,
-      }),
-    ).isRequired,
-    name: PropTypes.string.isRequired,
-    price: PropTypes.number.isRequired,
-    protein: PropTypes.number.isRequired,
-  }).isRequired,
-};
 
-const rows = [
-  createData('Frozen yoghurt', 159, 6.0, 24, 4.0, 3.99),
-  createData('Ice cream sandwich', 237, 9.0, 37, 4.3, 4.99),
-  createData('Eclair', 262, 16.0, 24, 6.0, 3.79),
-  createData('Cupcake', 305, 3.7, 67, 4.3, 2.5),
-  createData('Gingerbread', 356, 16.0, 49, 3.9, 1.5),
-];
+export default function CollapsibleTable({ authToken }) {
+  const [prodLinesData, setProdLinesData] = useState([]);
 
-export default function CollapsibleTable() {
+  const getProductionLines = () => {
+    fetch(`${apiUrl}/api/productionlines`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      }
+    }).then(response => response.json()).then(data => {
+      console.log(data);
+      setProdLinesData(data);
+    }).catch(err => console.log(err))
+  }
+
+  useEffect(() => {
+    getProductionLines();
+  }, [])
   return (
-    <TableContainer sx={{width:1200}} component={Paper}>
+    <TableContainer sx={{ width: 1200 }} component={Paper}>
       <Table aria-label="collapsible table">
         <TableHead>
           <TableRow>
             <TableCell />
-            <TableCell>Dessert (100g serving)</TableCell>
-            <TableCell align="right">Calories</TableCell>
-            <TableCell align="right">Fat&nbsp;(g)</TableCell>
-            <TableCell align="right">Carbs&nbsp;(g)</TableCell>
-            <TableCell align="right">Protein&nbsp;(g)</TableCell>
+            <TableCell >Line Name</TableCell>
+            <TableCell >Starting Date</TableCell>
+            <TableCell >Product Name</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {rows.map((row) => (
-            <Row key={row.name} row={row} />
+          {prodLinesData.map((prodLine) => (
+            <Row prodLine={prodLine} authToken={authToken} key={prodLine.line_id} />
           ))}
         </TableBody>
       </Table>

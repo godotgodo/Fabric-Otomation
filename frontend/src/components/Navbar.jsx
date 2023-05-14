@@ -10,11 +10,20 @@ import Avatar from '@mui/material/Avatar';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import AdbIcon from '@mui/icons-material/Adb';
+import { useNavigate } from 'react-router';
+import { useState } from 'react';
+
 
 const apiUrl=process.env.REACT_APP_API_URL;
-const settings = ['Account', 'Logout'];
 
-function Navbar() {
+function Navbar({authToken}) {
+  const navigate=useNavigate();
+
+  const handleLogOut=()=>{
+      localStorage.removeItem("authToken");
+      navigate('/admin');
+    }
+
   const [anchorElUser, setAnchorElUser] = React.useState(null);
 
   const handleOpenUserMenu = (event) => {
@@ -90,11 +99,10 @@ function Navbar() {
               open={Boolean(anchorElUser)}
               onClose={handleCloseUserMenu}
             >
-              {settings.map((setting) => (
-                <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                  <Typography textAlign="center">{setting}</Typography>
+                <MenuItem key={"logout"} onClick={handleCloseUserMenu}>
+                  <button onClick={handleLogOut}>Logout</button>
                 </MenuItem>
-              ))}
+             
             </Menu>
           </Box>
         </Toolbar>
