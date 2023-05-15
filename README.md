@@ -14,3 +14,25 @@ To run the frontend part of the project, follow these steps:
     
 
 By following these steps, you will be able to successfully run the frontend part of the project.
+
+## Running the Backend Part of The Project
+
+TO USE THE APP MAKE SURE THAT LARAVEL AND COMPOSER ARE INSTALLED.
+<br>
+
+THIS PROJECT RUNS ON THE PORT 8000 BY DEFAULT. 
+
+DON'T FORGET TO CREATE .env FILE AND DO YOUR DATABASE SETTINGS ON .env FILE
+<br>
+
+TAKE THE FOLLOWING STEPS ON YOUR TERMINAL
+<ul>
+    <li>composer update</li>
+    <li>composer install</li>
+    <li>php artisan migrate</li>
+    <li>php artisan serve</li>
+</ul>
+
+ENJOY!
+
+
